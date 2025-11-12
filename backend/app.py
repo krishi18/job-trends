@@ -19,7 +19,12 @@ app = FastAPI(title="Job Trends API")
 # GOOD
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # <-- Explicitly trust your front-end
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,7 +47,7 @@ router = APIRouter()
 @router.get("/jobs", response_model=List[schemas.JobResponse])
 def get_jobs(
     skip: int = 0,
-    limit: int = Query(100, ge=1, le=1000),
+    limit: int = Query(100, ge=1, le=10000),
     db: Session = Depends(get_db),
 ):
     """

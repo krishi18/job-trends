@@ -1,0 +1,161 @@
+/* --- Main Layout --- */
+.dashboard-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  padding: 1rem;
+}
+
+@media (min-width: 900px) {
+  .dashboard-container {
+    /* Side-by-side on large screens */
+    grid-template-columns: 250px 1fr;
+  }
+}
+
+/* --- Stat Card (Total Jobs) --- */
+.stat-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.stat-card p {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.stat-card h1 {
+  margin: 0.5rem 0 0 0;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #007bff;
+}
+
+/* --- Chart Card (Sunburst Chart) --- */
+.chart-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  overflow: hidden; /* Important */
+  
+  /* --- THIS IS THE KEY LAYOUT FIX --- */
+  /* Use Flexbox to layout the card */
+  display: flex;
+  flex-direction: column;
+  /* Set a fixed height for the card. 
+     You can change this to 700px, 800px, etc. */
+  height: 640px; 
+}
+
+.chart-card h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #333;
+  flex-shrink: 0; /* Don't let the title shrink */
+}
+
+/* --- D3 Sunburst Chart Styles --- */
+
+/* This wrapper will grow to fill the card */
+.sunburst-wrapper {
+  position: relative;
+  width: 100%;
+  flex-grow: 1; /* This makes it fill the remaining space */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0; /* Fix for flexbox in some browsers */
+}
+
+/* The SVG will fill the wrapper */
+.sunburst-svg {
+  display: block;
+  /* Let the SVG fill its parent wrapper */
+  width: 100%;
+  height: 100%;
+  /* Cap its size to match the viewBox */
+  max-width: 640px; 
+  max-height: 640px;
+}
+
+.sunburst-arc {
+  stroke: #fff;
+  stroke-width: 0.5px;
+  transition: fill-opacity 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.sunburst-center-text {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  pointer-events: none;
+}
+
+.center-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  fill: #333;
+}
+
+.center-desc {
+  font-size: 0.9rem;
+  fill: #666;
+}
+
+/* --- Tooltip --- */
+.chart-tooltip {
+  opacity: 0;
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+.chart-tooltip strong {
+  font-size: 1rem;
+  color: #58caff;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* --- Loading/Error --- */
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+}
+
+.error-message {
+  color: #d9534f;
+  font-weight: 500;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Center loading/error in the chart card */
+.chart-card .loading-spinner,
+.chart-card .error-message {
+  margin: auto; /* This works now inside a flex container */
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

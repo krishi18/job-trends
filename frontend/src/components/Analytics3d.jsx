@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import "./analytics-d3.css"; // Make sure to create this CSS file
 
 const BASE = "http://127.0.0.1:8000";
-const MAX_FETCH = 1000;
+const MAX_FETCH = 10000;
 
 // Candidate keys (case-insensitive attempts)
 const CANDIDATES = {
@@ -247,7 +247,7 @@ export default function Analytics3D() {
 function drawDonut(ref, data, opts = {}) {
   const svgEl = ref.current || ref;
   if (!svgEl) return;
-  const width = 360,
+  const width = 560,
     height = 360,
     radius = Math.min(width, height) / 2 - 12;
   const svg = d3.select(svgEl);
@@ -405,7 +405,7 @@ function drawHorizontalBar(element, data, opts = {}) {
 function drawHistogram(element, values, opts = {}) {
   const svgEl = element;
   if (!svgEl) return;
-  const width = 700,
+  const width = 900,
     height = 420;
   const margin = { top: 28, right: 14, bottom: 80, left: 60 };
   const svg = d3.select(svgEl);
