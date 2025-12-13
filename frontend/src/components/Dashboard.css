@@ -1,161 +1,402 @@
-/* --- Main Layout --- */
-.dashboard-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  padding: 1rem;
+/* Dashboard Enhanced Styles */
+.dashboard-enhanced {
+  padding: 2rem;
+  background: #f5f7fa;
+  min-height: 100vh;
 }
 
-@media (min-width: 900px) {
-  .dashboard-container {
-    /* Side-by-side on large screens */
-    grid-template-columns: 250px 1fr;
-  }
+/* Header Section */
+.dashboard-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e0e6ed;
 }
 
-/* --- Stat Card (Total Jobs) --- */
-.stat-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  padding: 1.5rem;
-  text-align: center;
-}
-
-.stat-card p {
+.dashboard-header-section h1 {
   margin: 0;
+  font-size: 2.5rem;
+  color: #2c3e50;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: #7f8c8d;
+  margin: 0.5rem 0 0 0;
+  font-size: 1.1rem;
+}
+
+.header-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filter-select {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #e0e6ed;
+  border-radius: 12px;
+  background: white;
+  color: #2c3e50;
   font-size: 1rem;
   font-weight: 500;
-  color: #555;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.stat-card h1 {
-  margin: 0.5rem 0 0 0;
-  font-size: 3rem;
-  font-weight: 700;
-  color: #007bff;
+.filter-select:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
-/* --- Chart Card (Sunburst Chart) --- */
-.chart-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  padding: 1.5rem;
-  overflow: hidden; /* Important */
-  
-  /* --- THIS IS THE KEY LAYOUT FIX --- */
-  /* Use Flexbox to layout the card */
-  display: flex;
-  flex-direction: column;
-  /* Set a fixed height for the card. 
-     You can change this to 700px, 800px, etc. */
-  height: 640px; 
+.filter-select:focus {
+  outline: none;
+  border-color: #667eea;
 }
 
-.chart-card h3 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-weight: 600;
-  color: #333;
-  flex-shrink: 0; /* Don't let the title shrink */
+/* KPI Grid - 4 Cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
-/* --- D3 Sunburst Chart Styles --- */
-
-/* This wrapper will grow to fill the card */
-.sunburst-wrapper {
-  position: relative;
-  width: 100%;
-  flex-grow: 1; /* This makes it fill the remaining space */
+.kpi-card {
+  background: white;
+  padding: 1.75rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 0; /* Fix for flexbox in some browsers */
+  gap: 1.25rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border-left: 4px solid;
 }
 
-/* The SVG will fill the wrapper */
-.sunburst-svg {
-  display: block;
-  /* Let the SVG fill its parent wrapper */
-  width: 100%;
-  height: 100%;
-  /* Cap its size to match the viewBox */
-  max-width: 640px; 
-  max-height: 640px;
-}
-
-.sunburst-arc {
-  stroke: #fff;
-  stroke-width: 0.5px;
-  transition: fill-opacity 0.2s ease-in-out;
-  cursor: pointer;
-}
-
-.sunburst-center-text {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  pointer-events: none;
-}
-
-.center-name {
-  font-size: 1.2rem;
-  font-weight: 600;
-  fill: #333;
-}
-
-.center-desc {
-  font-size: 0.9rem;
-  fill: #666;
-}
-
-/* --- Tooltip --- */
-.chart-tooltip {
-  opacity: 0;
+.kpi-card::before {
+  content: '';
   position: absolute;
-  background-color: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  border-radius: 6px;
-  padding: 10px 12px;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  transform: translate(30%, -30%);
+}
+
+.kpi-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+.kpi-card.primary { border-left-color: #667eea; }
+.kpi-card.success { border-left-color: #43e97b; }
+.kpi-card.info { border-left-color: #4facfe; }
+.kpi-card.warning { border-left-color: #fa709a; }
+
+.kpi-icon {
+  font-size: 3.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.kpi-content {
+  flex: 1;
+}
+
+.kpi-label {
+  margin: 0;
   font-size: 0.9rem;
-  line-height: 1.5;
-  pointer-events: none;
-  transition: opacity 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 100;
+  color: #7f8c8d;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.chart-tooltip strong {
-  font-size: 1rem;
-  color: #58caff;
-  display: block;
-  margin-bottom: 4px;
+.kpi-value {
+  margin: 0.5rem 0;
+  font-size: 2.25rem;
+  color: #2c3e50;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-/* --- Loading/Error --- */
-.loading-spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin: 2rem auto;
-}
-
-.error-message {
-  color: #d9534f;
+.kpi-trend {
+  font-size: 0.85rem;
+  color: #95a5a6;
   font-weight: 500;
-  text-align: center;
-  padding: 2rem;
+  margin-top: 0.25rem;
 }
 
-/* Center loading/error in the chart card */
-.chart-card .loading-spinner,
-.chart-card .error-message {
-  margin: auto; /* This works now inside a flex container */
+.kpi-trend.positive {
+  color: #43e97b;
+}
+
+.kpi-trend.negative {
+  color: #fa709a;
+}
+
+/* Charts Container */
+.charts-container {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
+}
+
+/* Chart Card Sizes */
+.chart-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.chart-card.large {
+  grid-column: span 8;
+}
+
+.chart-card.medium {
+  grid-column: span 6;
+}
+
+.chart-card.small {
+  grid-column: span 4;
+}
+
+.chart-card.info-card {
+  grid-column: span 4;
+}
+
+/* Chart Header */
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f3f7;
+}
+
+.chart-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.chart-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: #f0f3f7;
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+
+.chart-tabs button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: #7f8c8d;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.chart-tabs button:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.chart-tabs button.active {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Info Card Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  padding: 0.5rem 0;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e0e6ed 100%);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+  transform: translateX(5px);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.stat-item:hover .stat-icon {
+  transform: scale(1.2);
+}
+
+.stat-item:hover .stat-number,
+.stat-item:hover .stat-desc {
+  color: white;
+}
+
+.stat-item .stat-icon {
+  font-size: 2rem;
+  transition: all 0.3s ease;
+}
+
+.stat-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+  line-height: 1;
+}
+
+.stat-desc {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  margin: 0.25rem 0 0 0;
+}
+
+/* Loading & Error States */
+.dashboard-loading,
+.dashboard-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.spinner-large {
+  border: 6px solid #f0f3f7;
+  border-top: 6px solid #667eea;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1.5rem;
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.dashboard-loading h3,
+.dashboard-error h3 {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.dashboard-error p {
+  color: #7f8c8d;
+  margin-top: 0.5rem;
+}
+
+/* Recharts Customization */
+.recharts-wrapper {
+  margin: 0 auto;
+}
+
+.recharts-legend-wrapper {
+  padding-top: 1rem;
+}
+
+.recharts-default-tooltip {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+  .chart-card.large { grid-column: span 12; }
+  .chart-card.medium { grid-column: span 6; }
+  .chart-card.small { grid-column: span 6; }
+  .chart-card.info-card { grid-column: span 12; }
+}
+
+@media (max-width: 968px) {
+  .dashboard-enhanced {
+    padding: 1rem;
+  }
+
+  .dashboard-header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card.large,
+  .chart-card.medium,
+  .chart-card.small,
+  .chart-card.info-card {
+    grid-column: span 12;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-value {
+    font-size: 1.75rem;
+  }
+
+  .dashboard-header-section h1 {
+    font-size: 2rem;
+  }
+}
+
+/* Animation Effects */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kpi-card,
+.chart-card {
+  animation: fadeInUp 0.6s ease-out backwards;
+}
+
+.kpi-card:nth-child(1) { animation-delay: 0.1s; }
+.kpi-card:nth-child(2) { animation-delay: 0.2s; }
+.kpi-card:nth-child(3) { animation-delay: 0.3s; }
+.kpi-card:nth-child(4) { animation-delay: 0.4s; }
+
+.chart-card:nth-child(1) { animation-delay: 0.5s; }
+.chart-card:nth-child(2) { animation-delay: 0.6s; }
+.chart-card:nth-child(3) { animation-delay: 0.7s; }
+.chart-card:nth-child(4) { animation-delay: 0.8s; }
