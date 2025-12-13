@@ -1,146 +1,93 @@
 /* --- Layout --- */
 .analytics-3d-wrap {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
+  font-family: 'Segoe UI', sans-serif;
   background-color: #f4f7fa;
-  padding: 1.5rem;
+  padding: 2rem;
+  min-height: 100vh;
 }
 
 .analytics-header {
+  margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #dfe6ed;
 }
+
 .analytics-header h2 {
   margin: 0;
+  color: #2c3e50;
 }
+
 .analytics-header .summary {
-  font-size: 0.9rem;
-  color: #555;
-}
-.analytics-header .summary small {
-  margin-right: 8px;
-}
-.analytics-header .summary em {
-  color: #000;
-  font-style: normal;
-  font-weight: 500;
+  font-size: 1rem;
+  color: #7f8c8d;
+  margin-top: 0.5rem;
 }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Default 2 columns */
-  grid-template-areas:
-    "donut bar"
-    "hist hist";
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 1.5rem;
-  margin: 1.5rem 0;
 }
 
 /* --- Card Styles --- */
 .card {
   background: #ffffff;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   padding: 1.5rem;
-  overflow: hidden; /* Ensure charts stay inside */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .card h3 {
+  align-self: flex-start;
   margin-top: 0;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 0.75rem;
-  color: #333;
+  color: #34495e;
+  font-size: 1.1rem;
 }
 
-/* Assign grid areas */
-.donut-card {
-  grid-area: donut;
-}
-.bar-card {
-  grid-area: bar;
-}
-.hist-card {
-  grid-area: hist;
-}
-
-/* Responsive layout for smaller screens */
-@media (max-width: 900px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr; /* Stack on small screens */
-    grid-template-areas:
-      "donut"
-      "bar"
-      "hist";
-  }
-}
-
-/* --- Chart-Specific Styles --- */
+/* --- Chart SVG --- */
 .chart-svg {
   width: 100%;
-  height: auto; /* Make it responsive */
-  max-height: 420px;
+  height: auto;
+  max-height: 400px;
 }
 
-.chart-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  fill: #333;
+.hint {
+  fill: #95a5a6;
+  font-style: italic;
 }
 
-/* Bar/Hist Styles */
+/* --- Bar Chart --- */
 .bar {
-  fill: #007bff; /* A nice blue */
-  transition: fill 0.2s ease-in-out;
+  fill: #3498db;
+  rx: 2; /* Rounded corners */
 }
 .bar:hover {
-  fill: #0056b3; /* Darker blue on hover */
+  fill: #2980b9;
 }
 
-/* Axis Styles */
-.x-axis path,
-.y-axis path,
-.x-axis line,
-.y-axis line {
-  stroke: #ccc;
-  shape-rendering: crispEdges;
+/* --- Axes --- */
+.x-axis path, .y-axis path,
+.x-axis line, .y-axis line {
+  stroke: #bdc3c7;
 }
-.x-axis text,
-.y-axis text {
+
+.x-axis text, .y-axis text {
+  fill: #7f8c8d;
   font-size: 12px;
-  fill: #555;
-  font-family: inherit;
 }
 
-/* Donut Styles */
+/* --- Legend --- */
+.legend-item {
+  font-size: 12px;
+  fill: #2c3e50;
+  dominant-baseline: middle;
+}
+
 .donut-center {
-  font-size: 2rem;
-  font-weight: 700;
-  fill: #444;
-}
-.donut-card .legend-item {
-  font-size: 12px;
-  fill: #333;
-}
-
-/* Loading/Error/Hint states */
-.loading,
-.err,
-.hint {
-  padding: 2rem;
-  text-align: center;
-  font-size: 1.1rem;
-  color: #777;
-}
-.err {
-  color: #d9534f;
-  font-weight: 500;
-}
-.hint {
-  font-style: italic;
-  color: #999;
-}
-
-.analytics-3d-wrap {
-   max-width: 1200px; /* <--- This line limits the total width */
-  margin: 0 auto;     /* <--- This line centers it */
+  font-size: 1.5rem;
+  font-weight: bold;
+  fill: #2c3e50;
 }
