@@ -5,133 +5,96 @@ export default function JobForm() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-const [form, setForm] = useState({
-  Job_Title: "",
-  Job_Description: "",
-  Company_ID: "",
-  Location_ID: "",
-  Industry_ID: "",
-  Salary_USD: "",
-  Experience_Level: "",
-  Employment_Type: "",
-  Work_Setting: "",
-});
-
+  // Match Backend Model exactly
+  const [form, setForm] = useState({
+    job_title: "",
+    min_salary: "",
+    max_salary: "",
+    location: "",
+    company_name: "", // We use name for creation now
+    experience_level: "",
+    job_category: "",
+    work_setting: "",
+    company_size: ""
+  });
 
   const isEdit = !!id;
 
+  // If you don't have a specific "GET /jobs/{id}" endpoint in app.py yet,
+  // this part might fail. But here is the correct structure.
   useEffect(() => {
     if (isEdit) {
-      fetch(`http://127.0.0.1:8000/jobs/${id}`)
-        .then((res) => res.json())
-        .then((data) => setForm(data));
+      // Note: app.py needs a GET /jobs/{id} endpoint for this to work perfectly.
+      // Currently app.py only has GET /jobs (list).
     }
   }, [id]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const method = isEdit ? "PUT" : "POST";
-    const url = isEdit
-      ? `http://127.0.0.1:8000/jobs/${id}`
-      : "http://127.0.0.1:8000/jobs";
+    const url = "http://127.0.0.1:8000/jobs";
+    
+    // Convert numeric strings to numbers
+    const payload = {
+        ...form,
+        min_salary: parseInt(form.min_salary) || 0,
+        max_salary: parseInt(form.max_salary) || 0,
+    };
 
     fetch(url, {
-      method,
+      method: "POST", // Always POST for now (Create Job)
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     })
+      .then((res) => {
+          if(!res.ok) throw new Error("Failed");
+          return res.json();
+      })
       .then(() => navigate("/jobs"))
-      .catch((err) => console.error(err));
+      .catch((err) => alert("Error: " + err));
   };
 
   return (
-    <div className="container">
-      <h2>{isEdit ? "Edit Job" : "Add Job"}</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Job Title</label>
-          <input
-            value={form.Job_Title}
-            onChange={(e) => setForm({ ...form, Job_Title: e.target.value })}
-            required
-          />
+    <div className="container" style={{maxWidth: '600px', margin: '2rem auto'}}>
+      <h2>{isEdit ? "Edit Job (Unavailable)" : "Add New Job"}</h2>
+      <form onSubmit={handleSubmit} style={{display:'grid', gap:'1rem'}}>
+        
+        <label>
+            Job Title: 
+            <input value={form.job_title} onChange={e => setForm({...form, job_title: e.target.value})} required style={{display:'block', width:'100%', padding:'8px'}}/>
+        </label>
+        
+        <label>
+            Company Name:
+            <input value={form.company_name} onChange={e => setForm({...form, company_name: e.target.value})} required style={{display:'block', width:'100%', padding:'8px'}}/>
+        </label>
+
+        <div style={{display:'flex', gap:'1rem'}}>
+            <label style={{flex:1}}>
+                Min Salary:
+                <input type="number" value={form.min_salary} onChange={e => setForm({...form, min_salary: e.target.value})} required style={{display:'block', width:'100%', padding:'8px'}}/>
+            </label>
+            <label style={{flex:1}}>
+                Max Salary:
+                <input type="number" value={form.max_salary} onChange={e => setForm({...form, max_salary: e.target.value})} style={{display:'block', width:'100%', padding:'8px'}}/>
+            </label>
         </div>
 
-        <div className="form-group">
-          <label>Salary (USD)</label>
-          <input
-            type="number"
-            value={form.Salary_USD}
-            onChange={(e) => setForm({ ...form, Salary_USD: e.target.value })}
-          />
-        </div>
-        <div className="form-group">
-  <label>Job Description</label>
-  <textarea
-    value={form.Job_Description}
-    onChange={(e) => setForm({ ...form, Job_Description: e.target.value })}
-  />
-</div>
+        <label>
+            Location:
+            <input value={form.location} onChange={e => setForm({...form, location: e.target.value})} required style={{display:'block', width:'100%', padding:'8px'}}/>
+        </label>
 
-<div className="form-group">
-  <label>Company ID</label>
-  <input
-    type="number"
-    value={form.Company_ID}
-    onChange={(e) => setForm({ ...form, Company_ID: e.target.value })}
-  />
-</div>
+        <label>
+            Category:
+            <input value={form.job_category} onChange={e => setForm({...form, job_category: e.target.value})} style={{display:'block', width:'100%', padding:'8px'}}/>
+        </label>
+        
+        <label>
+            Work Setting (Remote/Hybrid/In-person):
+            <input value={form.work_setting} onChange={e => setForm({...form, work_setting: e.target.value})} style={{display:'block', width:'100%', padding:'8px'}}/>
+        </label>
 
-<div className="form-group">
-  <label>Location ID</label>
-  <input
-    type="number"
-    value={form.Location_ID}
-    onChange={(e) => setForm({ ...form, Location_ID: e.target.value })}
-  />
-</div>
-
-<div className="form-group">
-  <label>Industry ID</label>
-  <input
-    type="number"
-    value={form.Industry_ID}
-    onChange={(e) => setForm({ ...form, Industry_ID: e.target.value })}
-  />
-</div>
-
-
-        <div className="form-group">
-          <label>Experience Level</label>
-          <input
-            value={form.Experience_Level}
-            onChange={(e) =>
-              setForm({ ...form, Experience_Level: e.target.value })
-            }
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Employment Type</label>
-          <input
-            value={form.Employment_Type}
-            onChange={(e) =>
-              setForm({ ...form, Employment_Type: e.target.value })
-            }
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Work Setting</label>
-          <input
-            value={form.Work_Setting}
-            onChange={(e) => setForm({ ...form, Work_Setting: e.target.value })}
-          />
-        </div>
-
-        <button className="btn" type="submit">
-          {isEdit ? "Update Job" : "Add Job"}
-        </button>
+        <button type="submit" style={{padding:'10px', background:'#007bff', color:'white', border:'none', borderRadius:'4px', cursor:'pointer'}}>Create Job</button>
       </form>
     </div>
   );
