@@ -1,26 +1,37 @@
-# schemas.py
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, ConfigDict
+from typing import List, Optional
 
+# Shared properties
 class JobBase(BaseModel):
-    Job_Title: Optional[str] = None
-    Job_Description: Optional[str] = None
-    Company_ID: Optional[int] = None
-    Location_ID: Optional[int] = None
-    Industry_ID: Optional[int] = None
-    Salary_USD: Optional[int] = None
-    Employment_Type: Optional[str] = None
-    Experience_Level: Optional[str] = None
-    Work_Setting: Optional[str] = None
+    job_title: str
+    location: str
+    min_salary: Optional[int] = None
+    max_salary: Optional[int] = None
+    
+    # Additional fields
+    company_name: Optional[str] = None  # For creating jobs
+    experience_level: Optional[str] = None
+    work_setting: Optional[str] = None
+    work_year: Optional[int] = None
+    job_category: Optional[str] = None
+    company_size: Optional[str] = None
 
 class JobCreate(JobBase):
-    pass
+    skills: List[str] = []
 
-class JobUpdate(JobBase):
-    pass
+class Skill(BaseModel):
+    skill_name: str
+    
+    model_config = ConfigDict(from_attributes=True)  # Updated for Pydantic v2
+
+class Company(BaseModel):
+    company_name: str
+    
+    model_config = ConfigDict(from_attributes=True)  # Updated for Pydantic v2
 
 class JobResponse(JobBase):
-    Job_ID: int
+    job_id: int
+    company: Optional[Company] = None
+    skills: List[Skill] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)  # Updated for Pydantic v2
