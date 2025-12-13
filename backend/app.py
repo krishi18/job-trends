@@ -1,219 +1,232 @@
-from typing import List
-from fastapi import FastAPI, Depends, HTTPException, Query, APIRouter, status
+import uvicorn
+from typing import List, Optional
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from sqlalchemy import func, inspect
-from sqlalchemy import func  # <-- Just need it once
-from fastapi.responses import JSONResponse  # <-- Just need it once
-import logging
-
-logger = logging.getLogger("uvicorn.error")  
+from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload
 from db import SessionLocal, engine
-import models, schemas
-# Ensure models exist (ok for dev; use migrations in prod)
-models.Base.metadata.create_all(bind=engine)
+import models
+import schemas
 
-app = FastAPI(title="Job Trends API")
+print("\n🚀 Starting Job Trends API...\n")
 
-# CORS - allow your React dev origin (restrict in production)
-# GOOD
+try:
+    models.Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created")
+except Exception as e:
+    print(f"⚠️ Error: {e}")
+
+app = FastAPI(title="Job Trends API", version="1.0.0")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins for now
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Dependency for DB session
 def get_db():
-    db = SessionLocal()
     try:
-        yield db
+        return SessionLocal()
+    except Exception as e:
+        print(f"❌ DB Error: {e}")
+        return None
+
+@app.get("/")
+def read_root():
+    return {"message": "Job Trends API is running", "version": "1.0.0"}
+
+@app.get("/health")
+def health_check():
+    db = get_db()
+    if not db:
+        return {"status": "error", "message": "DB connection failed"}
+    try:
+        count = db.query(models.Job).count()
+        db.close()
+        return {"status": "healthy", "jobs": count}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/analytics/summary")
+def get_analytics_summary():
+    print("📊 Analytics request received")
+    defaults = {
+        "total_jobs": 0, "avg_salary": 0, "top_skills": [],
+        "salary_trend": [], "work_setting": [], "company_size": []
+    }
+    
+    db = get_db()
+    if not db:
+        return defaults
+
+    try:
+        total = db.query(models.Job).count()
+        print(f"  Found {total} jobs")
+        
+        if total == 0:
+            return defaults
+
+        avg = db.query(func.avg(models.Job.min_salary)).scalar() or 0
+        
+        skills = db.query(
+            models.Skill.skill_name, 
+            func.count(models.job_skills.c.job_id).label("count")
+        ).join(models.job_skills).group_by(models.Skill.skill_name).order_by(
+            func.count(models.job_skills.c.job_id).desc()
+        ).limit(10).all()
+        
+        trend = db.query(
+            models.Job.work_year, 
+            func.avg(models.Job.min_salary)
+        ).filter(
+            models.Job.work_year.isnot(None)
+        ).group_by(models.Job.work_year).order_by(models.Job.work_year).all()
+        
+        w_set = db.query(
+            models.Job.work_setting, 
+            func.count(models.Job.job_id)
+        ).filter(
+            models.Job.work_setting.isnot(None)
+        ).group_by(models.Job.work_setting).all()
+        
+        c_size = db.query(
+            models.Job.company_size, 
+            func.count(models.Job.job_id)
+        ).filter(
+            models.Job.company_size.isnot(None)
+        ).group_by(models.Job.company_size).all()
+
+        result = {
+            "total_jobs": total,
+            "avg_salary": int(avg),
+            "top_skills": [{"name": s[0], "count": s[1]} for s in skills],
+            "salary_trend": [{"year": int(s[0]), "salary": int(s[1])} for s in trend],
+            "work_setting": [{"name": s[0], "count": s[1]} for s in w_set],
+            "company_size": [{"name": s[0], "count": s[1]} for s in c_size]
+        }
+        
+        print(f"✅ Returning data: {total} jobs")
+        return result
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return defaults
     finally:
         db.close()
 
-# Router (keeps things organized)
-router = APIRouter()
-
-# -----------------------
-# Router endpoints (GET /jobs, GET /jobs/count)
-# -----------------------
-@router.get("/jobs", response_model=List[schemas.JobResponse])
-def get_jobs(
-    skip: int = 0,
-    limit: int = Query(100, ge=1, le=10000),
-    db: Session = Depends(get_db),
-):
-    """
-    Paginated job fetch.
-    Example: /jobs?skip=0&limit=100
-    """
-    jobs = db.query(models.Job).offset(skip).limit(limit).all()
-    return jobs
-
-@router.get("/jobs/count")
-def get_job_count(db: Session = Depends(get_db)):
-    total = db.query(models.Job).count()
-    return {"total_jobs": total}
-
-# include router in app
-app.include_router(router)
-
-# -----------------------
-# App endpoints (other CRUD)
-# -----------------------
-@app.get("/")
-def read_root():
-    return {"message": "Job Trends API"}
-
-@app.post("/jobs", response_model=schemas.JobResponse, status_code=201)
-def create_job(payload: schemas.JobCreate, db: Session = Depends(get_db)):
-    job = models.Job(**payload.dict())
-    db.add(job)
-    db.commit()
-    db.refresh(job)
-    return job
-
-@app.get("/jobs/{job_id}", response_model=schemas.JobResponse)
-def get_job(job_id: int, db: Session = Depends(get_db)):
-    job = db.query(models.Job).filter(models.Job.Job_ID == job_id).first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return job
-
-@app.put("/jobs/{job_id}", response_model=schemas.JobResponse)
-def update_job(job_id: int, payload: schemas.JobUpdate, db: Session = Depends(get_db)):
-    job = db.query(models.Job).filter(models.Job.Job_ID == job_id).first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    data = payload.dict(exclude_unset=True)
-    for k, v in data.items():
-        setattr(job, k, v)
-    db.commit()
-    db.refresh(job)
-    return job
-
-@app.delete("/jobs/{job_id}")
-def delete_job(job_id: int, db: Session = Depends(get_db)):
-    job = db.query(models.Job).filter(models.Job.Job_ID == job_id).first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    db.delete(job)
-    db.commit()
-    return {"message": "Job deleted successfully"}
-# Debug endpoint: inspect the 'jobs' table columns and show one sample row
-@app.get("/debug/job_columns")
-def debug_job_columns(db: Session = Depends(get_db)):
+@app.get("/jobs")
+def get_jobs_list(search: Optional[str] = None, limit: int = 100):
+    print(f"💼 Jobs list request (limit={limit})")
+    db = get_db()
+    if not db:
+        return []
+    
     try:
-        inspector = inspect(engine)  # engine imported from your db module
-        cols = inspector.get_columns("jobs")
-        col_names = [c["name"] for c in cols]
-
-        # sample one row to show keys/values (None if empty)
-        sample = db.query(models.Job).limit(1).all()
-        sample_repr = None
-        if sample:
-            # convert first row to dict: SQLAlchemy model -> column name mapping
-            row = sample[0]
-            sample_repr = {}
-            for n in col_names:
-                try:
-                    sample_repr[n] = getattr(row, n)
-                except Exception:
-                    sample_repr[n] = "<no-attr>"
-        return {"columns": col_names, "sample_row": sample_repr}
+        # ⭐ KEY FIX: Use joinedload to load company and skills BEFORE closing session
+        q = db.query(models.Job).options(
+            joinedload(models.Job.company),
+            joinedload(models.Job.skills)
+        )
+        
+        if search:
+            q = q.filter(or_(
+                models.Job.job_title.like(f"%{search}%"),
+                models.Job.location.like(f"%{search}%")
+            ))
+        
+        jobs = q.limit(limit).all()
+        
+        # Convert to dict WHILE session is still open
+        result = []
+        for job in jobs:
+            result.append({
+                "job_id": job.job_id,
+                "job_title": job.job_title,
+                "location": job.location,
+                "min_salary": job.min_salary,
+                "max_salary": job.max_salary,
+                "company": {"company_name": job.company.company_name} if job.company else None,
+                "work_setting": job.work_setting,
+                "company_size": job.company_size,
+                "experience_level": job.experience_level,
+                "job_category": job.job_category,
+                "work_year": job.work_year,
+                "skills": [{"skill_name": s.skill_name} for s in job.skills] if job.skills else []
+            })
+        
+        print(f"✅ Returning {len(result)} jobs")
+        return result
+        
     except Exception as e:
+        print(f"❌ Error: {e}")
         import traceback
-        tb = traceback.format_exc()
-        return JSONResponse({"error": str(e), "trace": tb}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        traceback.print_exc()
+        return []
+    finally:
+        db.close()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Helper: choose first existing attribute on models.Job from a candidate list
-def _find_job_column(candidates: list[str]):
-    for name in candidates:
-        if hasattr(models.Job, name):
-            return name
-    return None
-
-
-@app.get("/jobs/agg/location")
-def agg_by_location_safe(db: Session = Depends(get_db)):
-    """
-    Tries several candidate column names for location and returns aggregated counts.
-    """
+@app.post("/jobs")
+def create_job(job: schemas.JobCreate):
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="DB connection failed")
     try:
-        candidates = ["Location", "company_location", "employee_residence", "employeeResidence", "location", "companyLocation"]
-        found = _find_job_column(candidates)
-        if not found:
-            # if not found, respond with available columns (helpful for debugging)
-            inspector = inspect(engine)
-            col_names = [c["name"] for c in inspector.get_columns("jobs")]
-            return JSONResponse(
-                {"error": "No matching location column found on models.Job.",
-                 "tried_candidates": candidates,
-                 "available_columns": col_names},
-                status_code=status.HTTP_400_BAD_REQUEST
-            )
-
-        col_attr = getattr(models.Job, found)
-        rows = db.query(col_attr, func.count().label("cnt")) \
-                 .group_by(col_attr) \
-                 .order_by(func.count().desc()) \
-                 .all()
-        result = [{"label": (r[0] or "Unknown"), "count": int(r[1])} for r in rows]
-        return JSONResponse(result)
+        company = db.query(models.Company).filter_by(company_name=job.company_name).first()
+        if not company:
+            company = models.Company(company_name=job.company_name)
+            db.add(company)
+            db.commit()
+            db.refresh(company)
+        
+        new_job = models.Job(
+            job_title=job.job_title,
+            location=job.location,
+            min_salary=job.min_salary,
+            max_salary=job.max_salary,
+            company_id=company.company_id,
+            experience_level=job.experience_level,
+            work_setting=job.work_setting,
+            job_category=job.job_category,
+            company_size=job.company_size,
+            work_year=job.work_year or 2024
+        )
+        
+        if job.skills:
+            for skill_name in job.skills:
+                skill = db.query(models.Skill).filter_by(skill_name=skill_name).first()
+                if not skill:
+                    skill = models.Skill(skill_name=skill_name)
+                    db.add(skill)
+                new_job.skills.append(skill)
+        
+        db.add(new_job)
+        db.commit()
+        db.refresh(new_job)
+        
+        # Return as dict to avoid session issues
+        result = {
+            "job_id": new_job.job_id,
+            "job_title": new_job.job_title,
+            "location": new_job.location,
+            "min_salary": new_job.min_salary,
+            "max_salary": new_job.max_salary,
+            "company": {"company_name": company.company_name},
+            "skills": [{"skill_name": s.skill_name} for s in new_job.skills]
+        }
+        
+        return result
+        
     except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
-        logger.error("agg_by_location_safe error:\n%s", tb)
-        return JSONResponse({"error": str(e), "trace": tb}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        db.rollback()
+        print(f"❌ Error creating job: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
 
-
-@app.get("/jobs/agg/industry")
-def agg_by_industry_safe(db: Session = Depends(get_db)):
-    """
-    Tries several candidate column names for industry and returns aggregated counts.
-    """
-    try:
-        candidates = ["Industry", "job_category", "category", "industry", "industry_name", "Job_Category"]
-        found = _find_job_column(candidates)
-        if not found:
-            inspector = inspect(engine)
-            col_names = [c["name"] for c in inspector.get_columns("jobs")]
-            return JSONResponse(
-                {"error": "No matching industry column found on models.Job.",
-                 "tried_candidates": candidates,
-                 "available_columns": col_names},
-                status_code=status.HTTP_400_BAD_REQUEST
-            )
-
-        col_attr = getattr(models.Job, found)
-        rows = db.query(col_attr, func.count().label("cnt")) \
-                 .group_by(col_attr) \
-                 .order_by(func.count().desc()) \
-                 .all()
-        result = [{"label": (r[0] or "Unknown"), "count": int(r[1])} for r in rows]
-        return JSONResponse(result)
-    except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
-        logger.error("agg_by_industry_safe error:\n%s", tb)
-        return JSONResponse({"error": str(e), "trace": tb}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+if __name__ == "__main__":
+    print("\n✅ Server starting on http://127.0.0.1:8000")
+    print("📍 Docs: http://127.0.0.1:8000/docs\n")
+    uvicorn.run(app, host="127.0.0.1", port=8000)
